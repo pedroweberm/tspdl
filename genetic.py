@@ -4,24 +4,77 @@ import numpy as np
 import time
 import sys
 
-costs = [[]]
+costs = []
 demands = []
 drafts = []
-n = 5
-seed = mktime()
-
+n = 0
+seed = time.mktime()
 
 def parse_file(fileName):
     with open(fileName, "r") as f:
+        num_line = 0
+        global n
+        global costs
+        global demands
+        global drafts
+        n = fileName.split("_")[0]
+        n = n.replace("pcb", "")
+        n = n.replace("bayg", "")
+        n = n.replace("gr", "")
+        n = n.replace("KroA", "")
+        n = n.replace("ulysses", "")
+        n = int(n)
+
+        
+
         lines = f.readlines()
-        for line in lines:
-            line = line.replace("\n", "")
-            print(line)
+        if fileName[:3] == "pcb" or fileName[:4] == 'KroA':
+            costs = [[0] * int(n) for i in range(int(n))]
+            for line in lines:
+                if num_line >= 1 and num_line <= 1 + (int(n)-1):
+                    line = line.replace("\n", "")
+                    numeros = line.split(" ")
+                    for i in range(int(n)):
+                        costs[num_line-1][i] = (int(numeros[i]))
+                if num_line == 1 + (int(n)-1) + 1:
+                    line = line.replace("\n", "")
+                    numeros = line.split(" ")
+                    for i in range(len(numeros) - 1):
+                        demands.append(int(numeros[i]))
+                if num_line == 1 + (int(n)-1) + 2:
+                    line = line.replace("\n", "")
+                    numeros = line.split(" ")
+                    for i in range(len(numeros) - 1):
+                        drafts.append(int(numeros[i]))
+                num_line+=1
+        else:
+            costs = [[0] * int(n) for i in range(int(n)-1)]
+            for line in lines:
+                if num_line >= 16 and num_line < 16 + (int(n)-1):
+                    line = line.replace("\n", "")
+                    numeros = line.split(" ")
+                    for i in range(int(n)):
+                        costs[num_line-16][i] = (int(numeros[i]))
+                if num_line == 16 + (int(n)-1) + 8:
+                    line = line.replace("\n", "")
+                    numeros = line.split(" ")
+                    for i in range(len(numeros) - 1):
+                        demands.append(int(numeros[i]))
+                if num_line == 16 + (int(n)-1) + 11:
+                    line = line.replace("\n", "")
+                    numeros = line.split(" ")
+                    for i in range(len(numeros) - 1):
+                        drafts.append(int(numeros[i]))
+                num_line+=1
+        #for line in costs:
+        #    print(line)
+        #print(demands)
+        #print(drafts)
 
 
 def generate_initial_pop(initialPop, popSize):
     for i in range(0, popSize - 1):
-        initialPop.append(generateInidividual())
+        initialPop.append(generateIndividual())
     pass
     # return bestIndividual
 
@@ -52,7 +105,6 @@ def evaluate_pop(pop, costs):
         popCosts.append(individualCost)
 
     averageCost = totalCost/len(pop)
-
 
 def evaluate(c, x):
     cost = 0
@@ -85,10 +137,15 @@ def generate_neighbour():
 
 
 if __name__ == '__main__':
-    parse_file("instances/bayg29_10_1.dat")
+    parse_file(sys.argv[1])
     totalInitialCosts = 0
     totalFinalCosts = 0
     initialPop = []
+    global costs
+    global demands
+    global drafts
+    global n
+
     for i in range(0, 9):
         initialCost = evaluate(costs, generate_initial_pop(initialPop)["x"])
         totalInitialCosts = totalInitialCosts + initialCost
