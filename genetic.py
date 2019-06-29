@@ -4,29 +4,11 @@ import numpy as np
 import time
 import sys
 
-<<<<<<< HEAD
 def parse_file(fileName):
     with open(fileName, r) as f:
         lines = f.readlines()
         for line in lines: 
             print(line)
-
-def generate_initial_pop():
-
-def evaluate_pop():
-
-def select_individuals():
-
-def reproduce():
-
-def mutate():
-
-def genetic_alg():
-
-def generate_neighbour():
-
-def learn():
-=======
 
 def generate_initial_pop(initialPop):
 
@@ -42,8 +24,6 @@ def evaluate_pop(pop, costs):
         popCosts.append(individualCost)
 
     averageCost = totalCost/pop.len()
-
->>>>>>> 5abcaa585d45d5fd2c1d1b99a24b22a89b2c303f
 
 def evaluate(c, x):
     cost = 0
