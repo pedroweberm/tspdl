@@ -5,14 +5,15 @@ import time
 import sys
 
 def parse_file(fileName):
-    with open(fileName, r) as f:
+    with open(fileName, "r") as f:
         lines = f.readlines()
         for line in lines: 
+            line = line.replace("\n", "")
             print(line)
 
 def generate_initial_pop(initialPop):
-
-    return bestIndividual
+    pass
+    #return bestIndividual
 
 
 def evaluate_pop(pop, costs):
@@ -33,33 +34,34 @@ def evaluate(c, x):
 
     return cost
 
-
 def select_individuals():
-
+    pass
 
 def reproduce():
-
+    pass
 
 def mutate():
-
+    pass
 
 def genetic_alg(initialPop):
-
-    return bestIndividual
+    pass
+    #return bestIndividual
 
 
 def generate_neighbour():
+    pass
 
-
-def learn():
+if __name__ == '__main__':
+    parse_file("instances/bayg29_10_1.dat")
     totalInitialCosts = 0
     totalFinalCosts = 0
     initialPop = []
+    costs = []
     for i in range(0, 9):
         initialCost = evaluate(costs, generate_initial_pop(initialPop)["x"])
         totalInitialCosts = totalInitialCosts + initialCost
         finalCost = evaluate(costs, genetic_alg(initialPop)["x"])
         totalFinalCosts = totalFinalCosts + finalCost
 
-    averageInitialCost = totalInitialCosts/initialPop.len()
-    averageFinalCost = totalFinalCosts/initialPop.len()
+    averageInitialCost = totalInitialCosts/len(initialPop)
+    averageFinalCost = totalFinalCosts/len(initialPop)
