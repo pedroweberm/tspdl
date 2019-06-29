@@ -1,22 +1,28 @@
-from controller_interface import ControllerInterface
 import random
 import math
 import numpy as np
 import time
-        
-def generate_initial_pop(self):
+import sys
 
-def evaluate_pop(self):
+def parse_file(fileName):
+    with open(fileName, r) as f:
+        lines = f.readlines()
+        for line in lines: 
+            print(line)
 
-def select_individuals(self):
+def generate_initial_pop():
 
-def reproduce(self):
+def evaluate_pop():
 
-def mutate(self):
+def select_individuals():
 
-def genetic_alg(self:
+def reproduce():
 
-def generate_neighbour(self):
+def mutate():
 
-def learn(self):
+def genetic_alg():
+
+def generate_neighbour():
+
+def learn():
 
