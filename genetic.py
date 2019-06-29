@@ -4,10 +4,10 @@ import numpy as np
 import time
 import sys
 
-costs = [[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1]]
-demands = [0,1,1,1,1]
-drafts = [4,2,4,3,1]
-n = 5
+costs = [[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1],[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1]]
+demands = [0,1,1,1,1,1,1,1,1,1]
+drafts = [9,1,9,9,9,9,9,9,9,9]
+n = 10
 seed = 5
 
 
@@ -85,7 +85,7 @@ def generateIndividual():
     global n
     global seed
     
-    random.seed(seed)
+    #random.seed(seed)
 
     x = [[0] * int(n) for i in range(int(n))]
     unvisited = range(1, n)
@@ -94,16 +94,17 @@ def generateIndividual():
 
     currentDraft = sum(demands)
     
-    for i in  range(0, n):
+    for i in  range(0, n-1):
+        validChoices = []
         for j in range(0, len(unvisited)):
-            if drafts[unvisited[j]] <= currentDraft:
+            if drafts[unvisited[j]] >= currentDraft:
                 validChoices.append(unvisited[j])
 
         chosen = random.choice(validChoices)
         print(chosen)
-        print("removendo ", unvisited[chosen], " de ", unvisited, " na posicao ", chosen)
-        currentDraft = currentDraft - drafts[unvisited[chosen]]
-        unvisited.remove(unvisited[chosen])
+        print("removendo ", chosen, " de ", unvisited, " na posicao ", chosen)
+        currentDraft = currentDraft - demands[chosen]
+        unvisited.remove(chosen)
         solucao.append(chosen)
         
 
