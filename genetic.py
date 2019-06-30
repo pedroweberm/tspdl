@@ -224,7 +224,6 @@ def ComputeXY(solucao):
 def EvaluatePop(pop):
     popCosts = []
     for i in range(0, len(pop)):
-        print(pop[0]["x"])
         individualCost = Evaluate(pop[i]["x"])
         popCosts.append(individualCost)
     return popCosts
@@ -287,19 +286,27 @@ def Mutate(population):
     mutatedPopulation = []
     for individual in population:
         random_number = random.uniform(0, 1)
-        if random_number <= 0.1:
-            tour = RetrieveTour(individual['x'])
-            draft_tour = RetrieveDrafts(tour)
-            swappedTour = Swap(tour, draft_tour)
-            x, y = ComputeXY(swappedTour)
-            newIndividual = {
-                "x": x,
-                "y": y
-            }
+        if random_number <= 0.3:
+            newIndividual = SoftMutation(individual)
+            mutatedPopulation.append(newIndividual)
+        elif random_number <= 0.4:
+            newIndividual = GenerateIndividual()
             mutatedPopulation.append(newIndividual)
         else:
             mutatedPopulation.append(individual)
     return mutatedPopulation
+
+
+def SoftMutation(individual):
+    tour = RetrieveTour(individual['x'])
+    draft_tour = RetrieveDrafts(tour)
+    swappedTour = Swap(tour, draft_tour)
+    x, y = ComputeXY(swappedTour)
+    newIndividual = {
+        "x": x,
+        "y": y
+    }
+    return newIndividual
 
 
 def Swap(tour, draft):
@@ -375,7 +382,8 @@ def Evolve(population, scores, popSize):
     for j in range(0, topBest):
         newPopulation.append(population[topBestIndex[j]])
 
-    newPopulation.append(Reproduction(selectedIndividuals, popSize - topBest))
+    newPopulation = newPopulation + \
+        (Reproduction(selectedIndividuals, popSize - topBest))
 
     return newPopulation
 
@@ -383,10 +391,11 @@ def Evolve(population, scores, popSize):
 def GeneticAlg(initialPop, popSize):
     newPopulation = initialPop
     scores = []
-    iterations = 10
+    iterations = 1000
 
     for i in range(0, iterations):
         currentPopulation = newPopulation
+        Evaluate(currentPopulation[i]["x"])
         scores = EvaluatePop(currentPopulation)
         newPopulation = Evolve(currentPopulation, scores, popSize)
 
@@ -402,14 +411,15 @@ if __name__ == '__main__':
     totalInitialCosts = 0
     totalFinalCosts = 0
     initialPop = []
-    popSize = 10
+    popSize = 1000
 
-    for i in range(0, 1):
+    for i in range(0, 10):
         initialCost = GenerateInitialPop(initialPop, popSize)
         totalInitialCosts = totalInitialCosts + initialCost
         finalCost = Evaluate(GeneticAlg(initialPop, popSize)["x"])
-        #totalFinalCosts = totalFinalCosts + finalCost
+        totalFinalCosts = totalFinalCosts + finalCost
+        print(initialCost, finalCost)
 
-    averageInitialCost = totalInitialCosts/1
-    # averageFinalCost = totalFinalCosts/len(initialPop)
-    print(averageInitialCost)
+    averageInitialCost = totalInitialCosts/10
+    averageFinalCost = totalFinalCosts/10
+    print(averageInitialCost, averageFinalCost)
