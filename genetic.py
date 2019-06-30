@@ -89,7 +89,7 @@ def ValidateSolution(x, y):
         for i in range(0, n):
             rest1 += x[i][j]
         if (rest1 != 1):
-            #print("SOLUCAO NAO E VALIDA: Soma alguma coluna nao e igual a 1")
+            print("SOLUCAO NAO E VALIDA: Soma alguma coluna nao e igual a 1")
             return False
 
     rest2 = 1
@@ -99,7 +99,7 @@ def ValidateSolution(x, y):
         for j in range(0, n):
             rest2 += x[i][j]
         if (rest2 != 1):
-            #print("SOLUCAO NAO E VALIDA: Soma de alguma linha nao e igual a 1")
+            print("SOLUCAO NAO E VALIDA: Soma de alguma linha nao e igual a 1")
             return False
 
     rest31 = 0
@@ -113,7 +113,7 @@ def ValidateSolution(x, y):
         for i in range(0, n):
             rest32 += y[j][i]
         if ((rest31 - rest32) != demands[j]):
-           # print("SOLUCAO NAO E VALIDA: Demanda de todos portos nao e atendida")
+            print("SOLUCAO NAO E VALIDA: Demanda de todos portos nao e atendida")
             return False
 
     rest41 = 0
@@ -125,7 +125,7 @@ def ValidateSolution(x, y):
         rest42 += demands[i]
 
     if rest41 != rest42:
-        #print("SOLUCAO NAO E VALIDA: Embarcacao nao sai suficientemente carregada (soma das demandas)")
+        print("SOLUCAO NAO E VALIDA: Embarcacao nao sai suficientemente carregada (soma das demandas)")
         return False
 
     rest5 = 0
@@ -134,15 +134,15 @@ def ValidateSolution(x, y):
         rest5 += y[i][0]
 
     if rest5 != 0:
-        #print("SOLUCAO NAO E VALIDA: Embarcacao retorna para o porto com carga maior que 0")
+        print("SOLUCAO NAO E VALIDA: Embarcacao retorna para o porto com carga maior que 0")
         return False
 
     # Sexto conjunto de restricoes: limites de profundidade e implicacao
     for i in range(0, n):
         for j in range(0, n):
             if (y[i][j] < 0 or y[i][j] > drafts[j]*x[i][j]):
-                # print(
-                #    "SOLUCAO NAO E VALIDA: Profundidade limite violada ou implicacao de y e x violada")
+                print(
+                    "SOLUCAO NAO E VALIDA: Profundidade limite violada ou implicacao de y e x violada")
                 return False
 
     return True
@@ -286,12 +286,18 @@ def Mutate(population):
     mutatedPopulation = []
     for individual in population:
         random_number = random.uniform(0, 1)
-        if random_number <= 0.3:
+        if random_number <= 0.1:
             newIndividual = SoftMutation(individual)
             mutatedPopulation.append(newIndividual)
-        elif random_number <= 0.4:
+        elif random_number <= 0.15:
+            newIndividual = HardMutation(individual)
+            mutatedPopulation.append(newIndividual)
+        elif random_number <= 0.175:
             newIndividual = GenerateIndividual()
             mutatedPopulation.append(newIndividual)
+        # elif random_number <= 0.23:
+            #newIndividual = ScrambleMutation(individual)
+            # mutatedPopulation.append(newIndividual)
         else:
             mutatedPopulation.append(individual)
     return mutatedPopulation
@@ -299,9 +305,27 @@ def Mutate(population):
 
 def SoftMutation(individual):
     tour = RetrieveTour(individual['x'])
-    draft_tour = RetrieveDrafts(tour)
-    swappedTour = Swap(tour, draft_tour)
+    draft = RetrieveDrafts(tour)
+    randomDraft = draft[random.randint(0, len(draft) - 1)]
+    possibleSwap = []
+
+    for i in range(len(draft)):
+        if draft[i] == randomDraft:
+            possibleSwap.append(i)
+
+    if len(possibleSwap) >= 2:
+        if len(possibleSwap) > 2:
+            i, j = random.sample(possibleSwap, 2)
+        else:
+            i = possibleSwap[0]
+            j = possibleSwap[1]
+
+        swappedTour = Swap(tour, i, j)
+    else:
+        swappedTour = tour
+
     x, y = ComputeXY(swappedTour)
+
     newIndividual = {
         "x": x,
         "y": y
@@ -309,26 +333,46 @@ def SoftMutation(individual):
     return newIndividual
 
 
-def Swap(tour, draft):
-    swappedTour = []
-    random_draft = draft[random.randint(0, len(draft) - 1)]
+def HardMutation(individual):
+    tour = RetrieveTour(individual['x'])
+    draft = RetrieveDrafts(tour)
+    randomDraft = draft[random.randint(0, len(draft) - 1)]
     possibleSwap = []
-    swapped = False
-    while(not swapped):
-        for i in range(len(draft)):
-            if draft[i] == random_draft:
-                possibleSwap.append(i)
+    swappedTour = tour
 
-        if len(possibleSwap) > 2:
+    for i in range(len(draft)):
+        if draft[i] == randomDraft:
+            possibleSwap.append(i)
+
+    if len(possibleSwap) > 1:
+        for k in range(0, len(possibleSwap)):
+            currentTour = swappedTour
             i, j = random.sample(possibleSwap, 2)
-            for k in range(len(tour)):
-                if k == i:
-                    swappedTour.append(tour[j])
-                elif k == j:
-                    swappedTour.append(tour[i])
-                else:
-                    swappedTour.append(tour[k])
-            swapped = True
+            swappedTour = Swap(currentTour, i, j)
+    else:
+        swappedTour = tour
+
+    x, y = ComputeXY(swappedTour)
+
+    newIndividual = {
+        "x": x,
+        "y": y
+    }
+
+    if (not ValidateSolution(x, y)):
+        print("nao valida")
+    return newIndividual
+
+
+def Swap(tour, i, j):
+    swappedTour = []
+    for k in range(len(tour)):
+        if k == i:
+            swappedTour.append(tour[j])
+        elif k == j:
+            swappedTour.append(tour[i])
+        else:
+            swappedTour.append(tour[k])
     return swappedTour
 
 
@@ -375,7 +419,6 @@ def Evolve(population, scores, popSize):
     newPopulation = []
     topBest = int(popSize * 0.1)
     selectedIndividuals = []
-    topTenPC = popSize * 0.1
     selectedIndividuals = SelectIndividuals(population, scores, popSize)
 
     topBestIndex = np.argsort(scores)[:topBest]
@@ -391,13 +434,14 @@ def Evolve(population, scores, popSize):
 def GeneticAlg(initialPop, popSize):
     newPopulation = initialPop
     scores = []
-    iterations = 1000
+    iterations = 5
 
     for i in range(0, iterations):
         currentPopulation = newPopulation
-        Evaluate(currentPopulation[i]["x"])
         scores = EvaluatePop(currentPopulation)
         newPopulation = Evolve(currentPopulation, scores, popSize)
+        print(len(currentPopulation))
+        print(scores)
 
     return currentPopulation[scores.index(min(scores))]
 
@@ -411,7 +455,7 @@ if __name__ == '__main__':
     totalInitialCosts = 0
     totalFinalCosts = 0
     initialPop = []
-    popSize = 1000
+    popSize = 10
 
     for i in range(0, 10):
         initialCost = GenerateInitialPop(initialPop, popSize)
@@ -422,4 +466,4 @@ if __name__ == '__main__':
 
     averageInitialCost = totalInitialCosts/10
     averageFinalCost = totalFinalCosts/10
-    print(averageInitialCost, averageFinalCost)
+    print("final", averageInitialCost, averageFinalCost)
