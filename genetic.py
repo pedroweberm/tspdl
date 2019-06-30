@@ -151,11 +151,13 @@ def ValidateSolution(x, y):
 def GenerateInitialPop(initialPop, popSize):
     bestIndividual = GenerateIndividual()
     initialPop.append(bestIndividual)
+    best = Evaluate(bestIndividual["x"])
     for i in range(0, popSize - 1):
         currentIndividual = GenerateIndividual()
         initialPop.append(currentIndividual)
-        if (Evaluate(currentIndividual["x"]) < Evaluate(bestIndividual["x"])):
-            bestIndividual = currentIndividual
+        atual = Evaluate(currentIndividual["x"])
+        if atual < best:
+            best = atual
 
     return Evaluate(bestIndividual["x"])
 
@@ -188,19 +190,7 @@ def GenerateIndividual():
             unvisited.remove(chosen)
             solucao.append(chosen)
 
-        currentDraft = sum(demands) - demands[solucao[0]]
-        for i in range(len(solucao)):
-            if i >= 0 and i < len(solucao) - 1:
-                x[solucao[i]][solucao[int(i)+1]] = 1
-                y[solucao[i]][solucao[int(i)+1]] = currentDraft
-            if i == 0:
-                x[0][solucao[i]] = 1
-                y[0][solucao[i]] = sum(demands)
-            if i == len(solucao) - 1:
-                x[solucao[i]][0] = 1
-                y[solucao[i]][0] = currentDraft
-
-            currentDraft = currentDraft - demands[solucao[i]]
+            x, y = ComputeXY(solucao)
         solucaoValida = ValidateSolution(x, y)
 
     individual = {
@@ -209,6 +199,25 @@ def GenerateIndividual():
     }
     return individual
 
+def ComputeXY(solucao):
+    global demands
+    global n
+    x = [[0] * int(n) for i in range(int(n))]
+    y = [[0] * int(n) for i in range(int(n))]
+    currentDraft = sum(demands) - demands[solucao[0]]
+    for i in range(len(solucao)):
+        if i >= 0 and i < len(solucao) - 1:
+            x[solucao[i]][solucao[int(i)+1]] = 1
+            y[solucao[i]][solucao[int(i)+1]] = currentDraft
+        if i == 0:
+            x[0][solucao[i]] = 1
+            y[0][solucao[i]] = sum(demands)
+        if i == len(solucao) - 1:
+            x[solucao[i]][0] = 1
+            y[solucao[i]][0] = currentDraft
+
+        currentDraft = currentDraft - demands[solucao[i]]
+    return x, y
 
 def EvaluatePop(pop):
     popCosts = []
@@ -237,37 +246,122 @@ def SelectIndividuals(population, scores, popSize):
         random_individual = random.randint(0, popSize-1)
         scoreIndividual = scores[random_individual]
         random_number = random.uniform(0,1)
-        if random_number <= (scoreIndividual / maxScore):
-            print("SELECTED: " + str(random_individual))
+        if random_number >= (scoreIndividual / maxScore):
             selected.append(population[random_individual])
     return selected
 
 
-def Reproduce():
-    pass
+def Reproduce(parentA, parentB):
+    valida = False
+    global drafts
+    while(not valida):
+        tourA = RetrieveTour(parentA["x"])
+        tourB = RetrieveTour(parentB["x"])
+
+        draftsA = RetrieveDrafts(tourA)
+        draftsB = RetrieveDrafts(tourB)
+
+        x, y = ComputeXY(tourA)
+
+        for i in range(0, len(tourA)):
+            for j in range(0, len(tourB)):
+                if draftsA[i] == draftsB[j] and tourA[i] != tourB[j]:
+                    chance = random.uniform(0, 1)
+                    if chance >= 0.5:
+                        temp = tourA[i]
+                        tourA[tourA.index(tourB[j])] = temp
+                        tourA[i] = tourB[j]
+                        break
+
+        x, y = ComputeXY(tourA)
+        valida = ValidateSolution(x, y)
 
 
-def Mutate():
-    pass
+def Mutate(population):
+    mutatedPopulation = []
+    for individual in population:
+        random_number = random.uniform(0,1)
+        if random_number <= 0.1:
+            tour = RetrieveTour(individual['x'])
+            draft_tour = RetrieveDrafts(tour)
+            swappedTour = Swap(tour, draft_tour)
+            x, y = ComputeXY(swappedTour)
+            newIndividual = {
+                "x": x,
+                "y": y
+            }
+            mutatedPopulation.append(newIndividual)
+        else:
+            mutatedPopulation.append(individual)
+    return mutatedPopulation
 
+def Swap(tour, draft):
+    swappedTour = []
+    random_draft = draft[random.randint(0, len(draft)- 1)]
+    possibleSwap = []
+    swapped = False
+    while(not swapped):
+        for i in range(len(draft)):
+            if draft[i] == random_draft:
+                possibleSwap.append(i)
+        
+        if len(possibleSwap) > 2:
+            i, j = random.sample(possibleSwap, 2)
+            for k in range(len(tour)):
+                if k == i:
+                    swappedTour.append(tour[j])
+                elif k == j:
+                    swappedTour.append(tour[i])
+                else:
+                    swappedTour.append(tour[k])
+            swapped = True
+    return swappedTour
+
+def RetrieveTour(x):
+    tour = []
+    line = 0
+    while(len(tour) < len(x[0]) - 1):
+        for i in range(len(x[line])):
+            if x[line][i] == 1:
+                tour.append(i)
+                line = i
+                if len(tour) == len(x[0]):
+                    break
+    return tour
+
+def RetrieveDrafts(tour):
+    global drafts
+    tourDrafts = []
+    for i in tour:
+        tourDrafts.append(drafts[i])
+    return tourDrafts
 
 def Evolve(population, scores, popSize):
     selectedIndividuals = []
+    topTenPC = popSize * 0.1
     selectedIndividuals = SelectIndividuals(population, scores, popSize)
+
+    top_best_index = np.argsort(scores)[-top_best:]
+            for j in range (0, top_best):
+                new_population.append(population[top_best_index[j]])
+
+    selectedIndividuals = Reproduce()
+    newPopulation = Mutate(selectedIndividuals)
     #print(selectedIndividuals)
-    return population
+    return newPopulation
 
 
 def GeneticAlg(initialPop, popSize):
     newPopulation = initialPop
     scores = []
-    iterations = 50
+    iterations = 1000
 
     for i in range(0, iterations):
         currentPopulation = newPopulation
         scores = EvaluatePop(currentPopulation)
         newPopulation = Evolve(currentPopulation, scores, popSize)
-    return newPopulation[0]
+    scores = EvaluatePop(currentPopulation)
+    return currentPopulation[scores.index(min(scores))]
 
 
 def generate_neighbour(individual):
@@ -281,12 +375,12 @@ if __name__ == '__main__':
     initialPop = []
     popSize = 50
 
-    for i in range(0, 10):
+    for i in range(0, 1):
         initialCost = GenerateInitialPop(initialPop, popSize)
         totalInitialCosts = totalInitialCosts + initialCost
         finalCost = Evaluate(GeneticAlg(initialPop, popSize)["x"])
         #totalFinalCosts = totalFinalCosts + finalCost
 
-    averageInitialCost = totalInitialCosts/10
+    averageInitialCost = totalInitialCosts/1
     # averageFinalCost = totalFinalCosts/len(initialPop)
     print(averageInitialCost)
