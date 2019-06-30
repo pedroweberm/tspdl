@@ -275,6 +275,7 @@ def Reproduce(parentA, parentB):
 
         x, y = ComputeXY(tourA)
         valida = ValidateSolution(x, y)
+    
     individual = {
         "x": x,
         "y": y
@@ -295,9 +296,9 @@ def Mutate(population):
         elif random_number <= 0.175:
             newIndividual = GenerateIndividual()
             mutatedPopulation.append(newIndividual)
-        # elif random_number <= 0.23:
-            #newIndividual = ScrambleMutation(individual)
-            # mutatedPopulation.append(newIndividual)
+        elif random_number <= 0.2:
+            newIndividual = ScrambleMutation(individual)
+            mutatedPopulation.append(newIndividual)
         else:
             mutatedPopulation.append(individual)
     return mutatedPopulation
@@ -363,6 +364,40 @@ def HardMutation(individual):
         print("nao valida")
     return newIndividual
 
+def ScrambleMutation(individual):
+    newIndividual = []
+    global drafts
+    draftsIndex = {}
+    tour = RetrieveTour(individual['x'])
+    draftsLocal = RetrieveDrafts(tour)
+    currentTour = []
+    swappedTour = tour
+    for draft in draftsLocal:
+        temp = []
+        for i in range(len(tour)):
+            if drafts[tour[i]] == draft:
+                temp.append(i)
+        draftsIndex[str(draft)] = temp
+
+    for key in draftsIndex.keys():
+        if len(draftsIndex[key]) > 1:
+            for k in range(len(draftsIndex[key])):
+                currentTour = swappedTour
+                i, j = random.sample(draftsIndex[key], 2)
+                swappedTour = Swap(currentTour, i, j)
+    #print("Tour original: " + str(tour))
+    #print("Tour swappado: " + str(swappedTour))
+
+    x, y = ComputeXY(swappedTour)
+
+    newIndividual = {
+        "x": x,
+        "y": y
+    }
+
+    if (not ValidateSolution(x, y)):
+        print("nao valida")
+    return newIndividual
 
 def Swap(tour, i, j):
     swappedTour = []
@@ -425,8 +460,7 @@ def Evolve(population, scores, popSize):
     for j in range(0, topBest):
         newPopulation.append(population[topBestIndex[j]])
 
-    newPopulation = newPopulation + \
-        (Reproduction(selectedIndividuals, popSize - topBest))
+    newPopulation = newPopulation + (Reproduction(selectedIndividuals, popSize - topBest))
 
     return newPopulation
 
@@ -434,14 +468,15 @@ def Evolve(population, scores, popSize):
 def GeneticAlg(initialPop, popSize):
     newPopulation = initialPop
     scores = []
-    iterations = 5
+    iterations = 10
 
     for i in range(0, iterations):
         currentPopulation = newPopulation
         scores = EvaluatePop(currentPopulation)
         newPopulation = Evolve(currentPopulation, scores, popSize)
-        print(len(currentPopulation))
-        print(scores)
+        if len(newPopulation) > popSize:
+            print("DEU RUIM")
+        #print(scores)
 
     return currentPopulation[scores.index(min(scores))]
 
@@ -455,15 +490,20 @@ if __name__ == '__main__':
     totalInitialCosts = 0
     totalFinalCosts = 0
     initialPop = []
-    popSize = 10
+    popSize = 20
+    numExecs = 1
+    start_time = time.time()
 
-    for i in range(0, 10):
+
+    for i in range(0, numExecs):
         initialCost = GenerateInitialPop(initialPop, popSize)
         totalInitialCosts = totalInitialCosts + initialCost
         finalCost = Evaluate(GeneticAlg(initialPop, popSize)["x"])
         totalFinalCosts = totalFinalCosts + finalCost
         print(initialCost, finalCost)
+    
+    elapsed_time = time.time() - start_time
 
-    averageInitialCost = totalInitialCosts/10
-    averageFinalCost = totalFinalCosts/10
-    print("final", averageInitialCost, averageFinalCost)
+    #averageInitialCost = totalInitialCosts/numExecs
+    averageFinalCost = totalFinalCosts/numExecs
+    print("Final cost: " + str(averageFinalCost) + " com tempo = " +  str(elapsed_time))
