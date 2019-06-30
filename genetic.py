@@ -229,19 +229,18 @@ def Evaluate(x):
     return cost
 
 
-def SelectIndividuals(population, scores):
-        selected = []
-        population_size = len(population)
-        selected.append(population[scores.index(max(scores))])
-        maxScore = max(scores)
-        while(len(selected) < population_size):
-            random_individual = random.randint(0, len(population))
-            scoreIndividual = scores[random_individual]
-            random_number = random.uniform(0,1)
-            if random_number <= (scoreIndividual / maxScore):
-                print("SELECTED: " + str(random_individual))
-                selected.append(population[random_individual])
-        return selected
+def SelectIndividuals(population, scores, popSize):
+    selected = []
+    selected.append(population[scores.index(max(scores))])
+    maxScore = max(scores)
+    while(len(selected) < popSize):
+        random_individual = random.randint(0, popSize-1)
+        scoreIndividual = scores[random_individual]
+        random_number = random.uniform(0,1)
+        if random_number <= (scoreIndividual / maxScore):
+            print("SELECTED: " + str(random_individual))
+            selected.append(population[random_individual])
+    return selected
 
 
 def Reproduce():
@@ -252,14 +251,14 @@ def Mutate():
     pass
 
 
-def Evolve(population, scores):
+def Evolve(population, scores, popSize):
     selectedIndividuals = []
-    selectedIndividuals = SelectIndividuals(population, scores)
+    selectedIndividuals = SelectIndividuals(population, scores, popSize)
     #print(selectedIndividuals)
     return population
 
 
-def GeneticAlg(initialPop):
+def GeneticAlg(initialPop, popSize):
     newPopulation = initialPop
     scores = []
     iterations = 50
@@ -267,7 +266,7 @@ def GeneticAlg(initialPop):
     for i in range(0, iterations):
         currentPopulation = newPopulation
         scores = EvaluatePop(currentPopulation)
-        newPopulation = Evolve(currentPopulation, scores)
+        newPopulation = Evolve(currentPopulation, scores, popSize)
     return newPopulation[0]
 
 
@@ -285,7 +284,7 @@ if __name__ == '__main__':
     for i in range(0, 10):
         initialCost = GenerateInitialPop(initialPop, popSize)
         totalInitialCosts = totalInitialCosts + initialCost
-        finalCost = Evaluate(GeneticAlg(initialPop)["x"])
+        finalCost = Evaluate(GeneticAlg(initialPop, popSize)["x"])
         #totalFinalCosts = totalFinalCosts + finalCost
 
     averageInitialCost = totalInitialCosts/10
