@@ -242,7 +242,6 @@ def Evaluate(x):
 
     return cost
 
-
 def SelectIndividuals(population, scores, popSize):
     selected = []
     selected.append(population[scores.index(max(scores))])
@@ -254,7 +253,6 @@ def SelectIndividuals(population, scores, popSize):
         if random_number >= (scoreIndividual / maxScore):
             selected.append(population[random_individual])
     return selected
-
 
 def Reproduce(parentA, parentB):
     valida = False
@@ -285,7 +283,6 @@ def Reproduce(parentA, parentB):
     }
     return individual
 
-
 def Mutate(population):
     mutatedPopulation = []
     for individual in population:
@@ -305,7 +302,6 @@ def Mutate(population):
         else:
             mutatedPopulation.append(individual)
     return mutatedPopulation
-
 
 def SoftMutation(individual):
     tour = RetrieveTour(individual['x'])
@@ -500,9 +496,9 @@ if __name__ == '__main__':
     info = {}
 
     numExecs = 10
-    arquivos = ["bayg29_10_1.dat", "bayg29_50_1.dat", "gr17_25_1.dat",  "gr48_10_1.dat",  "gr48_25_1.dat", "KroA200_50_1.dat", "KroA200_75_1.dat", "pcb442_50_1.dat", "pcb442_75_1.dat", "ulysses22_50_1.dat"]
-    config = [[50, 25], [50, 25], [50, 25] ,[50, 25] ,[50, 25], [30, 15], [30, 15] ,[30, 15], [30, 15], [50, 25]]
-    bks = [1610, 2743, 2265, 5046, 5161.5, "unk", "unk", "unk", "unk", 8290]
+    arquivos = ["bayg29_10_1.dat", "bayg29_50_1.dat", "gr17_25_1.dat",  "gr48_10_1.dat",  "gr48_25_1.dat", "ulysses22_50_1.dat"]
+    config = [[300, 1600], [300, 1600], [300, 2500] ,[300, 750] ,[300, 750], [300, 2500]]
+    bks = [1610, 2743, 2265, 5046, 5161.5, 8290]
     for i in range(len(arquivos)):
         parse_file(arquivos[i])
         initialPop = []
@@ -512,26 +508,27 @@ if __name__ == '__main__':
         best_results = []
         times = []
         desvio_bks = []
+        bestIndividual = {} 
         for j in range(0, numExecs):
             start_time = time.time()
             initialCost = GenerateInitialPop(initialPop, config[i][0])
             totalInitialCosts = totalInitialCosts + initialCost
-            finalCost = Evaluate(GeneticAlg(initialPop, config[i][0], config[i][1])["x"])
+            bestIndividual = GeneticAlg(initialPop, config[i][0], config[i][1])
+            finalCost = Evaluate(bestIndividual["x"])
             best_results.append(finalCost)
             totalFinalCosts = totalFinalCosts + finalCost
             elapsed_time = time.time() - start_time
             times.append(elapsed_time)
-            desvio_bks.append(100 * ((finalCost - bks[i])/bks[i]))
 
+            desvio_bks.append(100 * ((finalCost - bks[i])/bks[i]))
+        
+        bestSolution = RetrieveTour(bestIndividual["x"])
         times_media = sum(times)/ numExecs
-        if bks[i] != "unk":
-            desvio_bks_medio = sum(desvio_bks) / numExecs
-        else:
-            desvio_bks_medio = "?"
+        desvio_bks_medio = sum(desvio_bks) / numExecs
         averageFinalCost = totalFinalCosts/numExecs
         averageInitialCost = totalInitialCosts/numExecs
         dp = statistics.stdev(best_results)
-        info[str(arquivos[i])] = [averageInitialCost, averageFinalCost, dp, times_media, desvio_bks_medio, elapsed_time]
+        info[str(arquivos[i])] = [averageInitialCost, averageFinalCost, dp, times_media, desvio_bks_medio, bestSolution]
         print("Terminei de rodar " + str(arquivos[i]) + " com tempo = " + str(sum(times)))
 
         dic_to_file(info)
