@@ -3,6 +3,7 @@ import math
 import numpy as np
 import time
 import sys
+import statistics
 
 # costs = [[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1],[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1]]
 # demands = [0,1,1,1,1,1,1,1,1,1]
@@ -28,6 +29,8 @@ def parse_file(fileName):
         n = n.replace("KroA", "")
         n = n.replace("ulysses", "")
         n = int(n)
+        demands = []
+        drafts = []
 
         lines = f.readlines()
         if fileName[:3] == "pcb" or fileName[:4] == 'KroA':
@@ -287,16 +290,16 @@ def Mutate(population):
     mutatedPopulation = []
     for individual in population:
         random_number = random.uniform(0, 1)
-        if random_number <= 0.1:
+        if random_number <= 0.2:
             newIndividual = SoftMutation(individual)
             mutatedPopulation.append(newIndividual)
-        elif random_number <= 0.15:
+        elif random_number <= 0.25:
             newIndividual = HardMutation(individual)
             mutatedPopulation.append(newIndividual)
-        elif random_number <= 0.175:
+        elif random_number <= 0.26:
             newIndividual = GenerateIndividual()
             mutatedPopulation.append(newIndividual)
-        elif random_number <= 0.2:
+        elif random_number <= 0.285:
             newIndividual = ScrambleMutation(individual)
             mutatedPopulation.append(newIndividual)
         else:
@@ -332,7 +335,6 @@ def SoftMutation(individual):
         "y": y
     }
     return newIndividual
-
 
 def HardMutation(individual):
     tour = RetrieveTour(individual['x'])
@@ -465,10 +467,9 @@ def Evolve(population, scores, popSize):
     return newPopulation
 
 
-def GeneticAlg(initialPop, popSize):
+def GeneticAlg(initialPop, popSize, iterations):
     newPopulation = initialPop
     scores = []
-    iterations = 10
 
     for i in range(0, iterations):
         currentPopulation = newPopulation
@@ -484,26 +485,54 @@ def GeneticAlg(initialPop, popSize):
 def generate_neighbour(individual):
     pass
 
+def dic_to_file(dic):
+    with open("resultados.txt", "w") as f:
+        for key in dic.keys():
+            line = ""
+            for value in dic[key]:
+                line += str(value)  + ","
+            f.write(line + "\n")
+
 
 if __name__ == '__main__':
-    parse_file(sys.argv[1])
     totalInitialCosts = 0
     totalFinalCosts = 0
-    initialPop = []
-    popSize = 20
-    numExecs = 1
-    start_time = time.time()
+    info = {}
 
+    numExecs = 10
+    arquivos = ["bayg29_10_1.dat", "bayg29_50_1.dat", "gr17_25_1.dat",  "gr48_10_1.dat",  "gr48_25_1.dat", "KroA200_50_1.dat", "KroA200_75_1.dat", "pcb442_50_1.dat", "pcb442_75_1.dat", "ulysses22_50_1.dat"]
+    config = [[50, 25], [50, 25], [50, 25] ,[50, 25] ,[50, 25], [30, 15], [30, 15] ,[30, 15], [30, 15], [50, 25]]
+    bks = [1610, 2743, 2265, 5046, 5161.5, "unk", "unk", "unk", "unk", 8290]
+    for i in range(len(arquivos)):
+        parse_file(arquivos[i])
+        initialPop = []
 
-    for i in range(0, numExecs):
-        initialCost = GenerateInitialPop(initialPop, popSize)
-        totalInitialCosts = totalInitialCosts + initialCost
-        finalCost = Evaluate(GeneticAlg(initialPop, popSize)["x"])
-        totalFinalCosts = totalFinalCosts + finalCost
-        print(initialCost, finalCost)
-    
-    elapsed_time = time.time() - start_time
+        totalFinalCosts = 0
+        totalInitialCosts = 0
+        best_results = []
+        times = []
+        desvio_bks = []
+        for j in range(0, numExecs):
+            start_time = time.time()
+            initialCost = GenerateInitialPop(initialPop, config[i][0])
+            totalInitialCosts = totalInitialCosts + initialCost
+            finalCost = Evaluate(GeneticAlg(initialPop, config[i][0], config[i][1])["x"])
+            best_results.append(finalCost)
+            totalFinalCosts = totalFinalCosts + finalCost
+            elapsed_time = time.time() - start_time
+            times.append(elapsed_time)
+            desvio_bks.append(100 * ((finalCost - bks[i])/bks[i]))
 
-    #averageInitialCost = totalInitialCosts/numExecs
-    averageFinalCost = totalFinalCosts/numExecs
-    print("Final cost: " + str(averageFinalCost) + " com tempo = " +  str(elapsed_time))
+        times_media = sum(times)/ numExecs
+        if bks[i] != "unk":
+            desvio_bks_medio = sum(desvio_bks) / numExecs
+        else:
+            desvio_bks_medio = "?"
+        averageFinalCost = totalFinalCosts/numExecs
+        averageInitialCost = totalInitialCosts/numExecs
+        dp = statistics.stdev(best_results)
+        info[str(arquivos[i])] = [averageInitialCost, averageFinalCost, dp, times_media, desvio_bks_medio, elapsed_time]
+        print("Terminei de rodar " + str(arquivos[i]) + " com tempo = " + str(sum(times)))
+
+        dic_to_file(info)
+        
