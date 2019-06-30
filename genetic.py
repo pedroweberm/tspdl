@@ -41,7 +41,7 @@ def parse_file(fileName):
                 if num_line == int(n) + 2:
                     line = line.replace("\n", "")
                     numeros = line.split(" ")
-                    for i in range(len(numeros) - 1):
+                    for i in range(len(numeros) - 2):
                         demands.append(int(numeros[i]))
                 if num_line == int(n) + 3:
                     line = line.replace("\n", "")
@@ -69,10 +69,10 @@ def parse_file(fileName):
                         drafts.append(int(numeros[i]))
                 num_line += 1
 
-        for line in costs:
-            print(line)
-        print(demands)
-        print(drafts)
+        #for line in costs:
+         #   print(line)
+        #print(demands)
+        #print(len(drafts))
 
 
 def ValidateSolution(x, y):
@@ -176,9 +176,11 @@ def GenerateIndividual():
         currentDraft = sum(demands)
         unvisited = list(range(1, n))
         solucao = []
-        for i in range(0, n-2):
+        for i in range(0, n-1):
             validChoices = []
-            for j in range(0, len(unvisited)-1):
+            #print(unvisited)
+            for j in range(0, len(unvisited)):
+                #print(unvisited[j])
                 if drafts[unvisited[j]] >= currentDraft:
                     validChoices.append(unvisited[j])
             chosen = random.choice(validChoices)
@@ -253,7 +255,7 @@ def Mutate():
 def Evolve(population, scores):
     selectedIndividuals = []
     selectedIndividuals = SelectIndividuals(population, scores)
-    print(selectedIndividuals)
+    #print(selectedIndividuals)
     return population
 
 
