@@ -31,21 +31,19 @@ def parse_file(fileName):
 
         lines = f.readlines()
         if fileName[:3] == "pcb" or fileName[:4] == 'KroA':
-            n += 1
-            print(str(n))
             costs = [[0] * int(n) for i in range(int(n))]
             for line in lines:
-                if num_line >= 1 and num_line <= 1 + (int(n)-1):
+                if num_line >= 2 and num_line <= 1 + (int(n)):
                     line = line.replace("\n", "")
                     numeros = line.split(" ")
-                    for i in range(int(n) - 1):
-                        costs[num_line-1][i] = (int(numeros[i]))
-                if num_line == 1 + (int(n)-1) + 1:
+                    for i in range(len(numeros) - 1):
+                        costs[num_line-2][i] = (int(numeros[i]))
+                if num_line == int(n) + 2:
                     line = line.replace("\n", "")
                     numeros = line.split(" ")
                     for i in range(len(numeros) - 1):
                         demands.append(int(numeros[i]))
-                if num_line == 1 + (int(n)-1) + 1:
+                if num_line == int(n) + 3:
                     line = line.replace("\n", "")
                     numeros = line.split(" ")
                     for i in range(len(numeros) - 1):
@@ -71,6 +69,11 @@ def parse_file(fileName):
                         drafts.append(int(numeros[i]))
                 num_line += 1
 
+        for line in costs:
+            print(line)
+        print(demands)
+        print(drafts)
+
 
 def ValidateSolution(x, y):
 
@@ -86,7 +89,7 @@ def ValidateSolution(x, y):
         for i in range(0, n):
             rest1 += x[i][j]
         if (rest1 != 1):
-            print("SOLUCAO NAO E VALIDA: Soma alguma coluna nao e igual a 1")
+            #print("SOLUCAO NAO E VALIDA: Soma alguma coluna nao e igual a 1")
             return False
 
     rest2 = 1
@@ -96,7 +99,7 @@ def ValidateSolution(x, y):
         for j in range(0, n):
             rest2 += x[i][j]
         if (rest2 != 1):
-            print("SOLUCAO NAO E VALIDA: Soma de alguma linha nao e igual a 1")
+            #print("SOLUCAO NAO E VALIDA: Soma de alguma linha nao e igual a 1")
             return False
 
     rest31 = 0
@@ -110,7 +113,7 @@ def ValidateSolution(x, y):
         for i in range(0, n):
             rest32 += y[j][i]
         if ((rest31 - rest32) != demands[j]):
-            print("SOLUCAO NAO E VALIDA: Demanda de todos portos nao e atendida")
+           # print("SOLUCAO NAO E VALIDA: Demanda de todos portos nao e atendida")
             return False
 
     rest41 = 0
@@ -122,7 +125,7 @@ def ValidateSolution(x, y):
         rest42 += demands[i]
 
     if rest41 != rest42:
-        print("SOLUCAO NAO E VALIDA: Embarcacao nao sai suficientemente carregada (soma das demandas)")
+        #print("SOLUCAO NAO E VALIDA: Embarcacao nao sai suficientemente carregada (soma das demandas)")
         return False
 
     rest5 = 0
@@ -131,15 +134,15 @@ def ValidateSolution(x, y):
         rest5 += y[i][0]
 
     if rest5 != 0:
-        print("SOLUCAO NAO E VALIDA: Embarcacao retorna para o porto com carga maior que 0")
+        #print("SOLUCAO NAO E VALIDA: Embarcacao retorna para o porto com carga maior que 0")
         return False
 
     # Sexto conjunto de restricoes: limites de profundidade e implicacao
     for i in range(0, n):
         for j in range(0, n):
             if (y[i][j] < 0 or y[i][j] > drafts[j]*x[i][j]):
-                print(
-                    "SOLUCAO NAO E VALIDA: Profundidade limite violada ou implicacao de y e x violada")
+                #print(
+                #    "SOLUCAO NAO E VALIDA: Profundidade limite violada ou implicacao de y e x violada")
                 return False
 
     return True
@@ -151,7 +154,7 @@ def GenerateInitialPop(initialPop, popSize):
     for i in range(0, popSize - 1):
         currentIndividual = GenerateIndividual()
         initialPop.append(currentIndividual)
-        if (Evaluate(currentIndividual["x"]) > Evaluate(bestIndividual["x"])):
+        if (Evaluate(currentIndividual["x"]) < Evaluate(bestIndividual["x"])):
             bestIndividual = currentIndividual
 
     return Evaluate(bestIndividual["x"])
@@ -173,12 +176,11 @@ def GenerateIndividual():
         currentDraft = sum(demands)
         unvisited = list(range(1, n))
         solucao = []
-        for i in range(0, n-1):
+        for i in range(0, n-2):
             validChoices = []
-            for j in range(0, len(unvisited)):
+            for j in range(0, len(unvisited)-1):
                 if drafts[unvisited[j]] >= currentDraft:
                     validChoices.append(unvisited[j])
-
             chosen = random.choice(validChoices)
             currentDraft = currentDraft - demands[chosen]
             unvisited.remove(chosen)
@@ -207,13 +209,10 @@ def GenerateIndividual():
 
 
 def EvaluatePop(pop):
-    global costs
-    totalCost = 0
     popCosts = []
     for individual in pop:
         individualCost = Evaluate(individual["x"])
         popCosts.append(individualCost)
-
     return popCosts
 
 
@@ -228,8 +227,19 @@ def Evaluate(x):
     return cost
 
 
-def SelectIndividuals():
-    pass
+def SelectIndividuals(population, scores):
+        selected = []
+        population_size = len(population)
+        selected.append(population[scores.index(max(scores))])
+        maxScore = max(scores)
+        while(len(selected) < population_size):
+            random_individual = random.randint(0, len(population))
+            scoreIndividual = scores[random_individual]
+            random_number = random.uniform(0,1)
+            if random_number <= (scoreIndividual / maxScore):
+                print("SELECTED: " + str(random_individual))
+                selected.append(population[random_individual])
+        return selected
 
 
 def Reproduce():
@@ -240,22 +250,23 @@ def Mutate():
     pass
 
 
-def Evolve(population):
-    selectedSolutions = []
-    pass
+def Evolve(population, scores):
+    selectedIndividuals = []
+    selectedIndividuals = SelectIndividuals(population, scores)
+    print(selectedIndividuals)
+    return population
 
 
 def GeneticAlg(initialPop):
-
-    currentPopulation = initialPop
-    costs = []
+    newPopulation = initialPop
+    scores = []
+    iterations = 50
 
     for i in range(0, iterations):
         currentPopulation = newPopulation
-        costs = EvaluatePop(currentPopulation)
-        newPopulation = Evolve(currentPopulation)
-    pass
-    # return bestIndividual
+        scores = EvaluatePop(currentPopulation)
+        newPopulation = Evolve(currentPopulation, scores)
+    return newPopulation[0]
 
 
 def generate_neighbour(individual):
@@ -272,7 +283,7 @@ if __name__ == '__main__':
     for i in range(0, 10):
         initialCost = GenerateInitialPop(initialPop, popSize)
         totalInitialCosts = totalInitialCosts + initialCost
-        finalCost = Evaluate(genetic_alg(initialPop)["x"])
+        finalCost = Evaluate(GeneticAlg(initialPop)["x"])
         #totalFinalCosts = totalFinalCosts + finalCost
 
     averageInitialCost = totalInitialCosts/10
