@@ -5,15 +5,10 @@ import time
 import sys
 import statistics
 
-# costs = [[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1],[1,2,3,4,5],[5,4,3,2,1],[1,3,2,4,5],[5,2,1,3,4],[3,5,2,4,1]]
-# demands = [0,1,1,1,1,1,1,1,1,1]
-# drafts = [9,1,9,9,9,8,9,9,2,9]
 costs = []
 demands = []
 drafts = []
-n = 10
-seed = 50
-
+n = 0
 
 def parse_file(fileName):
     with open(fileName, "r") as f:
@@ -72,12 +67,6 @@ def parse_file(fileName):
                         drafts.append(int(numeros[i]))
                 num_line += 1
 
-        # for line in costs:
-         #   print(line)
-        # print(demands)
-        # print(len(drafts))
-
-
 def ValidateSolution(x, y):
 
     global demands
@@ -92,7 +81,6 @@ def ValidateSolution(x, y):
         for i in range(0, n):
             rest1 += x[i][j]
         if (rest1 != 1):
-            print("SOLUCAO NAO E VALIDA: Soma alguma coluna nao e igual a 1")
             return False
 
     rest2 = 1
@@ -102,7 +90,6 @@ def ValidateSolution(x, y):
         for j in range(0, n):
             rest2 += x[i][j]
         if (rest2 != 1):
-            print("SOLUCAO NAO E VALIDA: Soma de alguma linha nao e igual a 1")
             return False
 
     rest31 = 0
@@ -116,7 +103,6 @@ def ValidateSolution(x, y):
         for i in range(0, n):
             rest32 += y[j][i]
         if ((rest31 - rest32) != demands[j]):
-            print("SOLUCAO NAO E VALIDA: Demanda de todos portos nao e atendida")
             return False
 
     rest41 = 0
@@ -128,7 +114,6 @@ def ValidateSolution(x, y):
         rest42 += demands[i]
 
     if rest41 != rest42:
-        print("SOLUCAO NAO E VALIDA: Embarcacao nao sai suficientemente carregada (soma das demandas)")
         return False
 
     rest5 = 0
@@ -137,15 +122,12 @@ def ValidateSolution(x, y):
         rest5 += y[i][0]
 
     if rest5 != 0:
-        print("SOLUCAO NAO E VALIDA: Embarcacao retorna para o porto com carga maior que 0")
         return False
 
     # Sexto conjunto de restricoes: limites de profundidade e implicacao
     for i in range(0, n):
         for j in range(0, n):
             if (y[i][j] < 0 or y[i][j] > drafts[j]*x[i][j]):
-                print(
-                    "SOLUCAO NAO E VALIDA: Profundidade limite violada ou implicacao de y e x violada")
                 return False
 
     return True
@@ -383,8 +365,6 @@ def ScrambleMutation(individual):
                 currentTour = swappedTour
                 i, j = random.sample(draftsIndex[key], 2)
                 swappedTour = Swap(currentTour, i, j)
-    #print("Tour original: " + str(tour))
-    #print("Tour swappado: " + str(swappedTour))
 
     x, y = ComputeXY(swappedTour)
 
@@ -393,8 +373,6 @@ def ScrambleMutation(individual):
         "y": y
     }
 
-    if (not ValidateSolution(x, y)):
-        print("nao valida")
     return newIndividual
 
 def Swap(tour, i, j):
@@ -471,15 +449,8 @@ def GeneticAlg(initialPop, popSize, iterations):
         currentPopulation = newPopulation
         scores = EvaluatePop(currentPopulation)
         newPopulation = Evolve(currentPopulation, scores, popSize)
-        if len(newPopulation) > popSize:
-            print("DEU RUIM")
-        #print(scores)
 
     return currentPopulation[scores.index(min(scores))]
-
-
-def generate_neighbour(individual):
-    pass
 
 def dic_to_file(dic):
     with open("resultados.txt", "w") as f:
@@ -491,45 +462,26 @@ def dic_to_file(dic):
 
 
 if __name__ == '__main__':
+    parse_file(sys.argv[1])
     totalInitialCosts = 0
     totalFinalCosts = 0
+    initialPop = []
+    popSize = 50
+    iterations = 50
+    numExecs = 10
+    
     info = {}
 
-    numExecs = 10
-    arquivos = ["bayg29_10_1.dat", "bayg29_50_1.dat", "gr17_25_1.dat",  "gr48_10_1.dat",  "gr48_25_1.dat", "ulysses22_50_1.dat"]
-    config = [[300, 1600], [300, 1600], [300, 2500] ,[300, 750] ,[300, 750], [300, 2500]]
-    bks = [1610, 2743, 2265, 5046, 5161.5, 8290]
-    for i in range(len(arquivos)):
-        parse_file(arquivos[i])
-        initialPop = []
+    for i in range(0, numExecs):
+        initialCost = GenerateInitialPop(initialPop, popSize)
+        totalInitialCosts = totalInitialCosts + initialCost
+        bestIndividual = GeneticAlg(initialPop, popSize, iterations)
+        finalCost = Evaluate(bestIndividual['x'])
+        totalFinalCosts = totalFinalCosts + finalCost
 
-        totalFinalCosts = 0
-        totalInitialCosts = 0
-        best_results = []
-        times = []
-        desvio_bks = []
-        bestIndividual = {} 
-        for j in range(0, numExecs):
-            start_time = time.time()
-            initialCost = GenerateInitialPop(initialPop, config[i][0])
-            totalInitialCosts = totalInitialCosts + initialCost
-            bestIndividual = GeneticAlg(initialPop, config[i][0], config[i][1])
-            finalCost = Evaluate(bestIndividual["x"])
-            best_results.append(finalCost)
-            totalFinalCosts = totalFinalCosts + finalCost
-            elapsed_time = time.time() - start_time
-            times.append(elapsed_time)
+    tour = RetrieveTour(bestIndividual['x'])
+    averageInitialCost = totalInitialCosts/numExecs
+    averageFinalCost = totalFinalCosts/numExecs
+    print("Final cost: " + str(averageFinalCost) + " com tour = " +  str(tour))
 
-            desvio_bks.append(100 * ((finalCost - bks[i])/bks[i]))
-        
-        bestSolution = RetrieveTour(bestIndividual["x"])
-        times_media = sum(times)/ numExecs
-        desvio_bks_medio = sum(desvio_bks) / numExecs
-        averageFinalCost = totalFinalCosts/numExecs
-        averageInitialCost = totalInitialCosts/numExecs
-        dp = statistics.stdev(best_results)
-        info[str(arquivos[i])] = [averageInitialCost, averageFinalCost, dp, times_media, desvio_bks_medio, bestSolution]
-        print("Terminei de rodar " + str(arquivos[i]) + " com tempo = " + str(sum(times)))
-
-        dic_to_file(info)
         
